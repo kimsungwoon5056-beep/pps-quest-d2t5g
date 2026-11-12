@@ -46,6 +46,43 @@
       var lx = side * 1.7 * S, lz = 3.3 * S, bx = land ? land.to.x : pos.x, bz = land ? land.to.z : pos.z;
       return { side: side, dy: (groundAt(bx + lx * rx + lz * Math.sin(yaw), bz + lx * rz + lz * Math.cos(yaw)) - (groundAt(bx, bz) + STAND)) / S + 0.12 };
     }
+    // 내려앉는 길에 건물이 있는지: 실제 활공 곡선(가로·세로 속도가 다름)을 여러 점으로 나눠 사이사이를 광선으로 검사한다
+    var probe = new THREE.Raycaster(), pSphere = new THREE.Sphere(), pA = new THREE.Vector3(), pB = new THREE.Vector3(), pD = new THREE.Vector3(), pP = new THREE.Vector3();
+    function solids() {
+      var list = [];
+      Q.scene.traverse(function (o) {
+        if (!o.isMesh || o.isInstancedMesh || !o.visible || !o.geometry || !o.geometry.attributes.position) return;
+        var m = o.material; if (!m || Array.isArray(m) || m.transparent) return;
+        for (var p = o; p; p = p.parent) if (p === team.root) return;          // 나르미·달이 자신은 빼고
+        if (!o.geometry.boundingSphere) o.geometry.computeBoundingSphere();
+        pSphere.copy(o.geometry.boundingSphere).applyMatrix4(o.matrixWorld);
+        if (pSphere.radius < 1.5 || pSphere.radius > 400) return;              // 작은 소품과 땅 전체는 빼고
+        list.push(o);
+      });
+      return list;
+    }
+    function landPathClear(from, to, list) {
+      var N = 12;
+      for (var i = 0; i < N; i++) {
+        var a = i / N, b = (i + 1) / N;
+        curvePoint(from, to, a, pA); curvePoint(from, to, b, pB);
+        var len = pD.subVectors(pB, pA).length(); if (len < 0.01) continue;
+        pD.normalize();
+        // 몸통 한 줄 + 양쪽 날개 끝 두 줄 + 발 쪽 한 줄 (날개 폭만큼 옆으로 띄워서)
+        var sx = -pD.z, sz = pD.x, sl = Math.hypot(sx, sz) || 1; sx /= sl; sz /= sl;
+        var offs = [[0, 0], [sx * 3.4, sz * 3.4], [-sx * 3.4, -sz * 3.4], [0, 0, -1.6]];
+        for (var q = 0; q < offs.length; q++) {
+          probe.set(pP.set(pA.x + offs[q][0], pA.y + (offs[q][2] || 0), pA.z + offs[q][1]), pD); probe.near = 0; probe.far = len + 2.2;   // +2.2: 몸 두께만큼 여유
+          if (probe.intersectObjects(list, false).length) return false;
+        }
+        if (pA.y < groundAt(pA.x, pA.z) + 1) return false;                     // 언덕 속으로 파고드는 길도 안 됨
+      }
+      return true;
+    }
+    function curvePoint(from, to, lk, out) {
+      var eh = 1 - Math.pow(1 - lk, 2.4), ev = 1 - Math.pow(1 - lk, 1.5);
+      return out.set(Q.lerp(from.x, to.x, eh), Q.lerp(from.y, to.y, ev) + Math.sin(Q.smooth(0.55, 1, lk) * Math.PI) * 0.9 + 2, Q.lerp(from.z, to.z, eh));
+    }
     function shadowAt(scale, op) { team.shadow.position.set(pos.x, groundAt(pos.x, pos.z) + 0.25, pos.z); team.shadow.scale.setScalar(scale); team.shadow.material.opacity = op; }
 
     function update(dt, t) {
@@ -235,6 +272,14 @@
         // 가까이 날아와 있었으면 그 자리에서 그대로 내려앉고(화면이 끊기지 않음), 멀리 있었으면 조금 떨어진 곳에서 날아든다
         var near = !parked && len < 70 && len > 3;
         var from = near ? pos.clone() : new THREE.Vector3(x + dx * 34, to.y + 14, z + dz * 34);
+        if (!near) {
+          // 멀리서 날아드는 경우: 그 방향에 건물(소방서 등)이 있으면 막히지 않는 방향·높이를 찾는다
+          var list = solids(), base = Math.atan2(dx, dz), OFF = [0, 0.6, -0.6, 1.2, -1.2, 1.8, -1.8, 2.5, -2.5, Math.PI], found = false;
+          for (var hi = 0; hi < 2 && !found; hi++) for (var oi = 0; oi < OFF.length && !found; oi++) {
+            var a2 = base + OFF[oi], cand = new THREE.Vector3(x + Math.sin(a2) * 34, to.y + (hi ? 22 : 14), z + Math.cos(a2) * 34);
+            if (landPathClear(cand, to, list)) { from = cand; dx = Math.sin(a2); dz = Math.cos(a2); found = true; }
+          }
+        }
         land = { t: 0, dur: near ? Q.clamp(from.distanceTo(to) / 17, 1.9, 3.0) : 2.2, from: from, to: to, yaw0: near ? yaw : Math.atan2(-dx, -dz), yaw1: ny, cut: !near };
         parked = true; dariWant = 0; settle = 0; squash = 0; team.snapOff(0); pos.copy(from); yaw = land.yaw0;
       },
