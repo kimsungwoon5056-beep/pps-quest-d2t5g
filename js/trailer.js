@@ -101,7 +101,8 @@
     ff(function () { return window.Missions.state() === "ending"; });
     await wait(0.6); hideCap();
     await live(4.2);
-    showCap("나르미와 달이의 조달 퀘스트", "2026 조달청 AI 게임 공모전 출품작");
+    showCap("나르미와 달이의 조달 퀘스트", "2026 조달청 AI 게임·콘텐츠 공모전 출품작");
+    cap.insertAdjacentHTML("beforeend", '<div class="tr-logo"><img src="img/pps-logo.png" alt="조달청"></div>');
   }
 
   start.addEventListener("click", function () {

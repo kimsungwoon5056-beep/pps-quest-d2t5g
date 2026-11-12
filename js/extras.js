@@ -129,6 +129,7 @@
     var fl = window.Game && window.Game.flight;
     document.body.classList.toggle("grounded", st === "ending" || !fl || !fl.enabled() || fl.parked());
     document.body.classList.toggle("ending", st === "ending");
+    var tl = $("title"); document.body.classList.toggle("on-title", !!tl && !tl.classList.contains("hidden"));   // 조달청 로고는 타이틀·엔딩에서만
     if (key !== lastKey) {
       lastKey = key;
       var idx = -1; STEPS.forEach(function (s, i) { if (s[0] === id) idx = i; });
