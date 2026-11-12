@@ -45,7 +45,7 @@
     if (speaker && speaker.userData) window.People.setMood(speaker, speaker.userData.restMood || "idle");
     speaker = (l.who && l.who.userData) ? l.who : null;
     if (speaker) window.People.setMood(speaker, l.mood || "talk");
-    if (l.cam) shot(l.cam.pos, l.cam.look, l.cam.fov, false, l.cam.exact);
+    if (l.cam) shot(l.cam.pos, l.cam.look, l.cam.fov, !!l.cam.snap, l.cam.exact);   // snap: 미끄러지지 않고 바로 장면 전환
     if (l.on) l.on();
     var f = info(l.who);
     $("dlgName").textContent = f.name; $("dlgFace").className = f.cls; $("dlgFace").style.background = f.color;

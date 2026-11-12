@@ -56,8 +56,8 @@
       if (tc && hc) {
         var mxT = (tc.x + hc.x) / 2, mzT = (tc.z + hc.z) / 2, gyT = Math.max(World.height(mxT, mzT), 0);
         var townCam = Q.camera.aspect < 1
-          ? { pos: [mxT + 55, gyT + 70, mzT - 80], look: [mxT, gyT + 8, mzT], fov: 56, exact: true }    // 세로 폰: 나라장터 탑이 앞을 막지 않는 동남쪽에서
-          : { pos: [mxT + 6, gyT + 62, mzT - 92], look: [mxT, gyT + 10, mzT], fov: 56, exact: true };   // 먼 풍경: 세로에서도 뒤로 빼지 않음 (나라장터 탑 글씨가 잘리지 않게)
+          ? { pos: [mxT + 55, gyT + 70, mzT - 80], look: [mxT, gyT + 8, mzT], fov: 56, exact: true, snap: true }    // 세로 폰: 나라장터 탑이 앞을 막지 않는 동남쪽에서
+          : { pos: [mxT + 6, gyT + 62, mzT - 92], look: [mxT, gyT + 10, mzT], fov: 56, exact: true, snap: true };   // 공방 → 읍내: 카메라가 나라장터 탑을 스쳐 가지 않게 바로 전환   // 먼 풍경: 세로에서도 뒤로 빼지 않음 (나라장터 탑 글씨가 잘리지 않게)
         lines.push({ who: "narmi", cam: townCam, text: "읍내 학교와 병원도 나라장터에서 같은 드론을 샀대.\n산불만이 아니라 건물 안전도 지켜.", on: townDrones });
         lines.push({ who: "dari", cam: townCam, text: "조달청이 첫 손님이 되어 주니까\n좋은 기술이 온 나라로 퍼져 나가는구나!", on: function () { ctx.team.cheer(); } });
       } else lines.push({ who: "narmi", cam: jwCam, text: "조달청이 첫 손님이 되어 주면,\n좋은 기술이 온 나라로 퍼져 나가." });
