@@ -356,6 +356,11 @@
   }
 
   function cutCams() {
+    // 세로 폰: 가로용 구도는 카메라가 읍내 건물 속이나 뒤로 가 버리므로, 건물 앞에서 탑·개찰대·나르미 팀을 함께 담는 자리를 따로 쓴다
+    if (rows.length > 1) return {
+      wide: { pos: [team.x - 2.7, gy + 6.3, SPOT.z + 22], look: [SPOT.x + 3, gy + 13, SPOT.z - 22], fov: 58, exact: true },
+      team: { pos: [team.x - 5, gy + 7, team.z + 17], look: [team.x + 2.5, gy + 4, team.z - 2], fov: 50, exact: true }
+    };
     return {
       wide: { pos: [team.x - 9, gy + 6.5, SPOT.z + 36], look: [SPOT.x + 3, gy + 15, SPOT.z - 22], fov: 58 },
       team: { pos: [team.x + 8.5, gy + 4.8, team.z + 9.5], look: [team.x, gy + 3.5, team.z], fov: 40 }
@@ -366,7 +371,7 @@
     if (beam) { ctx.remove(beam); beam.geometry.dispose(); beam.material.dispose(); beam = null; }
     ctx.flight.park(team.x, team.z, Math.PI / 2);                // 개찰대 옆에 서서 개찰대를 바라본다
     var cams = cutCams();
-    window.Story.shot(cams.wide.pos, cams.wide.look, cams.wide.fov, true);
+    window.Story.shot(cams.wide.pos, cams.wide.look, cams.wide.fov, true, cams.wide.exact);
     window.Story.play([
       { who: "narmi", cam: cams.wide, text: "전국의 학교·병원·소방서가 필요한 걸 여기 나라장터에서 사.\n기업은 누구나 같은 규칙으로 겨루고." },
       { who: "dari", cam: cams.team, text: "어? 수상한 입찰서가 섞여 있는 것 같아.\n값과 서류를 잘 보고 가려내자!" }

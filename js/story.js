@@ -15,6 +15,7 @@
   var picks = null, onPick = null, hover = null, ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   var FACE = { narmi: { name: "나르미", color: "#ffffff", cls: "narmi" }, dari: { name: "달이", color: "#f29a45", cls: "dari" } };
 
+  var dirV = new THREE.Vector3();
   // exact: 화면 비율에 맞춰 이미 계산한 구도(2장 개찰대, 4장 검사대 등)는 그대로 쓴다
   function shot(pos, look, fov, snap, exact) {
     var f = window.Game && window.Game.flight;
@@ -25,10 +26,13 @@
     // 아래쪽 대사 상자에 가리지 않게 바라보는 점을 살짝 내려 인물을 위로 올린다
     var a = Q.camera.aspect || 1;
     if (a < 1 && !exact) {
-      var k = Math.min(1.5, Math.sqrt(1 / a)), dist = camPos.distanceTo(camLook);
-      camPos.sub(camLook).multiplyScalar(k).add(camLook);
-      var dy = Math.min(dist * k * 0.07, 2.2);                    // 먼 풍경 장면에서 카메라가 땅으로 파고들지 않게 한도
+      var k = Math.min(1.5, Math.sqrt(1 / a)), dist = camPos.distanceTo(camLook), want = dist * k;
+      dirV.copy(camPos).sub(camLook).normalize();
+      camPos.copy(camLook).addScaledVector(dirV, want);
+      var dy = Math.min(want * 0.07, 2.2);                        // 먼 풍경 장면에서 카메라가 땅으로 파고들지 않게 한도
       camLook.y -= dy; camPos.y -= dy;
+      var gh = window.World && window.World.height ? Math.max(window.World.height(camPos.x, camPos.z), 0) : 0;
+      if (camPos.y < gh + 2.5) camPos.y = gh + 2.5;               // 땅속으로 들어가지 않게
     }
     if (snap) { Q.camera.position.copy(camPos); curLook.copy(camLook); }
   }
