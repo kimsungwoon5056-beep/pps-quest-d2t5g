@@ -140,7 +140,8 @@
     o.binZ = o.rowsZ[o.rowsZ.length - 1] - 8.8;   // 돌려보냄 상자
     o.charZ = o.binZ - 9;                         // 검사관과 나르미 팀이 서는 줄
     o.boothZ = o.charZ - 13;
-    o.officer = { x: -7, z: o.charZ }; o.team = { x: 8, z: o.charZ };
+    // 세로 화면은 옆 폭이 좁으니 검사관과 나르미 팀이 조금 가까이 선다 (대화 장면에서 크게 보이게)
+    o.officer = { x: wide ? -7 : -4.5, z: o.charZ }; o.team = { x: wide ? 8 : 5, z: o.charZ };
     return o;
   }
   function slot(i) { var col = i % L.cols, row = Math.floor(i / L.cols); return { x: (col - (L.cols - 1) / 2) * PITCH, z: L.rowsZ[row], col: col, row: row }; }
@@ -242,12 +243,15 @@
     return { pos: [lx, ly + Math.sin(e) * d, lz + Math.cos(e) * d], look: [lx, ly, lz], fov: FOV };
   }
   function meetCams() {
-    var gy = S.y + FY, ox = S.x + L.officer.x, tx = S.x + L.team.x, z = S.z + L.charZ, mx = (ox + tx) / 2;
-    var d = Math.max(18, 11 / (Math.tan(Q.effFov(46) * Math.PI / 360) * aspect()));
+    var gy = S.y + FY, ox = S.x + L.officer.x, tx = S.x + L.team.x, z = S.z + L.charZ, mx = (ox + tx) / 2 + 1;   // +1: 나르미 오른쪽의 달이까지
+    var half = (L.team.x - L.officer.x) / 2 + 4;                  // 검사관부터 달이까지 다 들어오는 반쪽 폭
+    var d = Math.max(18, half / (Math.tan(Q.effFov(46) * Math.PI / 360) * aspect()));
+    var two = { pos: [mx, gy + 15, z + d], look: [mx, gy + 2.6, z], fov: 46, exact: true };
     return {
-      two: { pos: [mx, gy + 15, z + d], look: [mx, gy + 2.6, z], fov: 46 },
+      two: two,
       officer: { pos: [ox + 4.5, gy + 11, z + 12], look: [ox, gy + 3.6, z], fov: 40 },
-      team: { pos: [tx - 5, gy + 12, z + 14], look: [tx + 1, gy + 2.8, z + 1], fov: 44 }
+      // 세로 화면에서는 가까이 잡으면 달이가 등을 보이고 상자에 가려지므로 셋이 다 보이는 넓은 화면을 쓴다
+      team: aspect() < 1 ? two : { pos: [tx - 5, gy + 12, z + 14], look: [tx + 1, gy + 2.8, z + 1], fov: 44 }
     };
   }
 
@@ -434,7 +438,7 @@
     ctx.flight.park(S.x + L.team.x, S.z + L.team.z, -0.6);
     if (officer) officer.rotation.y = 0.6;
     ctx.objective("");
-    window.Story.shot(cams.two.pos, cams.two.look, cams.two.fov, true);
+    window.Story.shot(cams.two.pos, cams.two.look, cams.two.fov, true, true);
     window.Story.play([
       { who: officer || { name: "검사관" }, mood: "wave", cam: cams.two, text: "어서 와요! 여기는 품질 검사장이에요.\n다 만든 드론을 보내기 전에 살펴보는 곳이죠." },
       { who: "dari", cam: cams.team, text: "세금으로 사는 물건이니까 꼼꼼하게!\n불량은 돌려보내고, 합격한 것만 보내자.", on: function () { ctx.team.cheer(); } }
@@ -443,7 +447,7 @@
       ctx.flight.park(S.x + L.team.x, S.z + L.team.z, 0);
       if (officer) { officer.rotation.y = 0; People.setMood(officer, "idle"); }
       spawnDrones();
-      var c = beltCam(); window.Story.shot(c.pos, c.look, c.fov);
+      var c = beltCam(); window.Story.shot(c.pos, c.look, c.fov, false, true);
       setBanner("검사대에 드론 6대가 올라와요");
     });
   }
@@ -502,7 +506,7 @@
         return;
       }
       if (phase === "roll" || phase === "pick" || phase === "stamp") {   // 화면 크기가 바뀌어도 6대가 다 보이게 구도를 다시 잡는다
-        c = beltCam(); window.Story.shot(c.pos, c.look, c.fov);
+        c = beltCam(); window.Story.shot(c.pos, c.look, c.fov, false, true);
       }
       if (phase === "roll") {
         if (beltMap) beltMap.offset.x -= dt * ROLL_SPEED / 4;

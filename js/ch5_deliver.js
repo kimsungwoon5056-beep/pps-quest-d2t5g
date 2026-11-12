@@ -55,7 +55,9 @@
       var T = World.town, tc = T && T.school, hc = T && T.hospital;
       if (tc && hc) {
         var mxT = (tc.x + hc.x) / 2, mzT = (tc.z + hc.z) / 2, gyT = Math.max(World.height(mxT, mzT), 0);
-        var townCam = { pos: [mxT + 6, gyT + 62, mzT - 92], look: [mxT, gyT + 10, mzT], fov: 56 };
+        var townCam = Q.camera.aspect < 1
+          ? { pos: [mxT + 55, gyT + 70, mzT - 80], look: [mxT, gyT + 8, mzT], fov: 56, exact: true }    // 세로 폰: 나라장터 탑이 앞을 막지 않는 동남쪽에서
+          : { pos: [mxT + 6, gyT + 62, mzT - 92], look: [mxT, gyT + 10, mzT], fov: 56, exact: true };   // 먼 풍경: 세로에서도 뒤로 빼지 않음 (나라장터 탑 글씨가 잘리지 않게)
         lines.push({ who: "narmi", cam: townCam, text: "읍내 학교와 병원도 나라장터에서 같은 드론을 샀대.\n산불만이 아니라 건물 안전도 지켜.", on: townDrones });
         lines.push({ who: "dari", cam: townCam, text: "조달청이 첫 손님이 되어 주니까\n좋은 기술이 온 나라로 퍼져 나가는구나!", on: function () { ctx.team.cheer(); } });
       } else lines.push({ who: "narmi", cam: jwCam, text: "조달청이 첫 손님이 되어 주면,\n좋은 기술이 온 나라로 퍼져 나가." });
@@ -176,7 +178,7 @@
           if (S0) { var yd0 = S0.yard, tx0 = yd0.x + 6, tz0 = yd0.z + 3; ctx.flight.park(tx0, tz0, Math.atan2(S0.chief.position.x - tx0, S0.chief.position.z - tz0)); }
           seq = { from: pos.clone(), up: pos.clone().setY(pos.y + 16), over: new THREE.Vector3(firePos.x - 8, firePos.y + 30, firePos.z - 6), found: false };
           document.body.classList.add("cine");
-          window.Story.shot([pos.x - 26, pos.y + 8, pos.z - 22], [pos.x, pos.y + 6, pos.z], 50, true);
+          window.Story.shot([pos.x - 26, pos.y + 8, pos.z - 22], [pos.x, pos.y + 6, pos.z], 50, true, true);
         }
       } else if (phase === "drop") {
         // 드론 출동: 떠오르기(0~1.6초) → 산으로 날아가기(~5.4초) → 연기 속 훑기(~8초) → 불씨 발견
@@ -185,28 +187,28 @@
         flyDrone.userData.rotors.forEach(function (r) { r.rotation.y += dt * 46; });
         if (clock < 1.6) {
           k = Q.smooth(0, 1.6, clock); d.lerpVectors(seq.from, seq.up, k);
-          window.Story.shot([seq.from.x - 26, seq.from.y + 8, seq.from.z - 22], [d.x, d.y, d.z], 50);
+          window.Story.shot([seq.from.x - 26, seq.from.y + 8, seq.from.z - 22], [d.x, d.y, d.z], 50, false, true);
         } else if (clock < 5.4) {
           k = Q.smooth(1.6, 5.4, clock); d.lerpVectors(seq.up, seq.over, k); d.y += Math.sin(k * Math.PI) * 10;
           var dir = new THREE.Vector3().subVectors(seq.over, seq.up).setY(0).normalize();
           flyDrone.rotation.y = Math.atan2(dir.x, dir.z);
-          window.Story.shot([d.x - dir.x * 22 + dir.z * 8, d.y + 7, d.z - dir.z * 22 - dir.x * 8], [d.x + dir.x * 10, d.y - 2, d.z + dir.z * 10], 52);
+          window.Story.shot([d.x - dir.x * 22 + dir.z * 8, d.y + 7, d.z - dir.z * 22 - dir.x * 8], [d.x + dir.x * 10, d.y - 2, d.z + dir.z * 10], 52, false, true);
         } else if (!seq.found) {
           // 연기 위를 천천히 돌며 탐지 빛으로 훑는다
           var a = (clock - 5.4) * 1.3;
           d.set(firePos.x + Math.cos(a) * 9, firePos.y + 26 + Math.sin(clock * 3) * 0.6, firePos.z + Math.sin(a) * 9);
           scanCone.visible = true; scanCone.position.copy(d); scanCone.rotation.set(Math.sin(clock * 2.2) * 0.35, 0, Math.cos(clock * 1.7) * 0.35);
           scanCone.material.opacity = 0.16 + Math.abs(Math.sin(clock * 6)) * 0.14;
-          window.Story.shot([firePos.x - 30, firePos.y + 46, firePos.z - 52], [firePos.x, firePos.y + 16, firePos.z], 50);
+          window.Story.shot([firePos.x - 30, firePos.y + 46, firePos.z - 52], [firePos.x, firePos.y + 16, firePos.z], 50, false, true);
           if (clock > 8) {
             seq.found = true; ember.visible = true; ember.userData.t = 0;
             ctx.burst(firePos.clone().setY(firePos.y + 2), 0xff5a3c); window.Sound.fx.stamp(); window.Sound.fx.good();
             scanCone.material.color.setHex(0xff6a5a);
-            var emCam = { pos: [firePos.x - 18, firePos.y + 24, firePos.z - 30], look: [firePos.x, firePos.y + 4, firePos.z], fov: 46 };
+            var emCam = { pos: [firePos.x - 18, firePos.y + 24, firePos.z - 30], look: [firePos.x, firePos.y + 4, firePos.z], fov: 46, exact: true };   // 드론 장면은 원래 구도 그대로
             window.Story.play([
               { who: "dari", cam: emCam, text: "삐빅! 연기 속에서 작은 불씨를 찾았어!\n드론이 소방서에 위치를 바로 보냈대." },
               { who: "narmi", cam: emCam, text: "사람 눈으로는 못 찾았을 거야.\n번지기 전에 잡을 수 있어!" }
-            ], function () { phase = "safe"; clock = 0; scanCone.visible = false; window.Story.shot(emCam.pos, emCam.look, emCam.fov); window.Sound.fx.win(); });
+            ], function () { phase = "safe"; clock = 0; scanCone.visible = false; window.Story.shot(emCam.pos, emCam.look, emCam.fov, false, true); window.Sound.fx.win(); });
           }
         }
         if (ember.visible) {                                  // 발견된 불씨: 깜빡이며 빨간 고리가 퍼진다

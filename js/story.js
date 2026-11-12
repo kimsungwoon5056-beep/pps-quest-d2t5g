@@ -15,11 +15,21 @@
   var picks = null, onPick = null, hover = null, ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   var FACE = { narmi: { name: "나르미", color: "#ffffff", cls: "narmi" }, dari: { name: "달이", color: "#f29a45", cls: "dari" } };
 
-  function shot(pos, look, fov, snap) {
+  // exact: 화면 비율에 맞춰 이미 계산한 구도(2장 개찰대, 4장 검사대 등)는 그대로 쓴다
+  function shot(pos, look, fov, snap, exact) {
     var f = window.Game && window.Game.flight;
     if (snap && f && f.gliding && f.gliding()) snap = false;      // 날아와 내려앉는 중이면 화면을 끊지 않고 부드럽게 옮긴다
     if (!camOn && !snap) { Q.camera.getWorldDirection(curLook); curLook.multiplyScalar(20).add(Q.camera.position); }
     camOn = true; camPos.set(pos[0], pos[1], pos[2]); camLook.set(look[0], look[1], look[2]); camFov = fov || 50;
+    // 폰 세로 화면: 장면 구도는 가로 화면 기준이라 양옆 인물이 잘린다 → 카메라를 조금 뒤로 빼서 옆 폭을 넓히고,
+    // 아래쪽 대사 상자에 가리지 않게 바라보는 점을 살짝 내려 인물을 위로 올린다
+    var a = Q.camera.aspect || 1;
+    if (a < 1 && !exact) {
+      var k = Math.min(1.5, Math.sqrt(1 / a)), dist = camPos.distanceTo(camLook);
+      camPos.sub(camLook).multiplyScalar(k).add(camLook);
+      var dy = Math.min(dist * k * 0.07, 2.2);                    // 먼 풍경 장면에서 카메라가 땅으로 파고들지 않게 한도
+      camLook.y -= dy; camPos.y -= dy;
+    }
     if (snap) { Q.camera.position.copy(camPos); curLook.copy(camLook); }
   }
   function free() { camOn = false; }
@@ -35,7 +45,7 @@
     if (speaker && speaker.userData) window.People.setMood(speaker, speaker.userData.restMood || "idle");
     speaker = (l.who && l.who.userData) ? l.who : null;
     if (speaker) window.People.setMood(speaker, l.mood || "talk");
-    if (l.cam) shot(l.cam.pos, l.cam.look, l.cam.fov);
+    if (l.cam) shot(l.cam.pos, l.cam.look, l.cam.fov, false, l.cam.exact);
     if (l.on) l.on();
     var f = info(l.who);
     $("dlgName").textContent = f.name; $("dlgFace").className = f.cls; $("dlgFace").style.background = f.color;

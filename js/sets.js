@@ -43,8 +43,12 @@
     truck.position.set(-17, 0, 11); truck.rotation.y = -0.25; g.add(truck);          // 망루 옆 (대화하는 마당을 가리지 않게)
     var apron = Toon.mesh(new THREE.BoxGeometry(30, 0.25, 22), 0xbdb9ad); apron.position.set(1, 0.12, 17); apron.userData.noInk = true; g.add(apron);          // 앞마당 바닥
     var lineY = Toon.mesh(new THREE.BoxGeometry(30, 0.27, 0.5), 0xffd23f); lineY.position.set(1, 0.13, 7.6); lineY.userData.noInk = true; g.add(lineY);
+    // 간판: 2층 창문·지붕 끝과 겹치지 않게 지붕 위 앞쪽에 세운 옥상 간판 (빨간 판 + 다리 둘)
+    var SX = 2.5, SY = 12.3, SZ = 6.9;          // 마당(대화 장면) 쪽으로 조금 치우쳐 화면에 잘 들어오게
+    var board = Toon.mesh(new THREE.BoxGeometry(13.8, 3.9, 0.5), R); board.position.set(SX, SY, SZ - 0.3); g.add(board);
+    [SX - 5, SX + 5].forEach(function (lx) { var leg = Toon.mesh(new THREE.BoxGeometry(0.5, 1.6, 0.5), 0x7e1f1f); leg.position.set(lx, 10.8, SZ - 0.4); g.add(leg); });
     Toon.outline(g, 0.22);
-    var sign = label("솔바람 119 소방서", 14, "#ffffff", "#d83a3a"); sign.position.set(0, 9.7, 7.56); g.add(sign);
+    var sign = label("솔바람 119 소방서", 13, "#ffffff", "#d83a3a"); sign.position.set(SX, SY, SZ); g.add(sign);
     g.position.set(x, y, z); g.scale.setScalar(1.25);
     Toon.bake(g); Q.scene.add(g); return g;
   }

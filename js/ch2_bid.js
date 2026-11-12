@@ -270,7 +270,7 @@
     var lo = 8, hi = 260, i;
     for (i = 0; i < 22; i++) { var mid = (lo + hi) / 2; if (fits(mid)) hi = mid; else lo = mid; }
     camPos = [cx, cy - fy * hi, cz - fz * hi]; camLook = [cx, cy, cz]; lastAspect = Q.camera.aspect;
-    window.Story.shot(camPos, camLook, FOV, !!snap);
+    window.Story.shot(camPos, camLook, FOV, !!snap, true);
   }
 
   // ---------- 판단 ----------
@@ -329,8 +329,10 @@
         }
       } else if (c.state === "out") {                            // 걸러낸 카드: 빨간 표시가 붙고 뒤로 물러난다
         c.t += dt; e = easeOut(c.t / 0.45);
-        c.g.position.set(c.home.x, c.home.y, c.home.z - 1.5 * e);
-        c.inner.rotation.x = TILT - 0.42 * e; c.inner.rotation.y = 0; c.inner.scale.setScalar(1 - 0.14 * e);
+        // 한 줄(가로 화면)은 뒤로 눕고, 계단식 여러 줄(세로 폰)은 뒷줄 계단 벽에 파묻히지 않게 그 자리에서 살짝 앞으로 나와 작아진다
+        var stacked = rows.length > 1;
+        c.g.position.set(c.home.x, c.home.y, c.home.z + (stacked ? 0.5 : -1.5) * e);
+        c.inner.rotation.x = TILT - (stacked ? 0.06 : 0.42) * e; c.inner.rotation.y = 0; c.inner.scale.setScalar(1 - (stacked ? 0.1 : 0.14) * e);
         c.face.material.color.setScalar(1 - 0.42 * e);
         if (c.mark) { c.markT += dt; var mk = Q.clamp(c.markT / 0.16, 0, 1); c.mark.scale.setScalar(2.4 - 1.4 * mk + (mk >= 1 ? Math.max(0, 0.18 - (c.markT - 0.16)) : 0)); }
       } else if (c.state === "win") {                            // 낙찰 기업: 앞으로 나온다
@@ -419,6 +421,7 @@
       if (!stand || standKey !== rows.join("")) { trash(stand); stand = buildStand(); standKey = rows.join(""); }
       else { var mx = 0; rows.forEach(function (n) { mx = Math.max(mx, n); }); standW = rowWidth(mx) + 3; }
       team.x = SPOT.x - standW / 2 - 4; team.z = SPOT.z + 2;
+      if (rows.length > 1) { team.x -= 1.5; team.z += 3; }       // 세로 폰(계단식): 개찰대 기둥 뒤에 가려지지 않게 조금 바깥·앞으로
       if (ctx.flight.parked && ctx.flight.parked()) ctx.flight.takeoff(undefined, 28);   // 앞 장이 땅에서 끝났더라도 비행으로 시작
       ctx.setTarget(SPOT.x, gy + 30, SPOT.z + 6);
       beam = ctx.beam(SPOT.x, SPOT.z + 6, 0x7fd8ff);
